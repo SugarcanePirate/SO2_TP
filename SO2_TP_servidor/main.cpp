@@ -5,12 +5,14 @@
 
 #define BUFFERSIZE 512
 
+DWORD WINAPI ThreadCliente(LPVOID lpvPARAM);
+
 int _tmain(VOID) {
 	bool fConnected = false;
 	DWORD dwThreadId = 0;
 	HANDLE hPipe = INVALID_HANDLE_VALUE;
 	HANDLE hThread = NULL;
-	LPTSTR lpszPipename = TEXT("\\\\.\\pipe\\pipeteste");
+	LPTSTR lpszPipename = TEXT("\\\\.\\pipe\\pipeexemplo");
 
 	while (1) {
 		_tprintf(TEXT("\nServidor Ligado pipe=%s\n"), lpszPipename);
@@ -22,11 +24,10 @@ int _tmain(VOID) {
 			return -1;
 
 			//aguardar por clientes
-			//
-
+		}
 			fConnected = ConnectNamedPipe(hPipe, NULL) ?
 				TRUE : (GetLastError() == ERROR_PIPE_CONNECTED); //sucesso
-		}
+		
 
 		if (fConnected) {
 			printf("Cliente ligado.Thread a ser criada\n");
@@ -109,10 +110,13 @@ DWORD WINAPI ThreadCliente(LPVOID lpvPARAM) {
 				_tprintf(TEXT("ReadFile falhou. Erro = %d\n"), GetLastError());
 			break;
 		}
-
+	
 		//Escreve a resposta no pipe
+		_tprintf(TEXT("[ESCRITOR] Frase: "));
+		_fgetts(pchReply, 256, stdin);
+		cbReplyBytes = _tcslen(pchReply)*sizeof(TCHAR);
 		fSuccess = WriteFile(hPipe, pchReply, cbReplyBytes, &cbWritten, NULL);
-
+		_tprintf(TEXT("[Servidor] Enviei %d bytes ao leitor... (WriteFile)\n"), cbReplyBytes);
 		if (!fSuccess || cbReplyBytes != cbWritten) {
 			_tprintf(TEXT("WriteFile falhou. Erro=%d\n"), GetLastError());
 			break;
