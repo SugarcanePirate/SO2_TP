@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include <tchar.h>
 #include <strsafe.h>
+#include <conio.h>
+#include <fcntl.h>
+#include <io.h>
 
 #define BUFFERSIZE 512
 
@@ -13,6 +16,11 @@ int _tmain(VOID) {
 	HANDLE hPipe = INVALID_HANDLE_VALUE;
 	HANDLE hThread = NULL;
 	LPTSTR lpszPipename = TEXT("\\\\.\\pipe\\pipeexemplo");
+
+#ifdef UNICODE
+	_setmode(_fileno(stdin), _O_WTEXT);
+	_setmode(_fileno(stdout), _O_WTEXT);
+#endif
 
 	while (1) {
 		_tprintf(TEXT("\nServidor Ligado pipe=%s\n"), lpszPipename);
