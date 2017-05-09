@@ -15,11 +15,11 @@ int _tmain(int argc, TCHAR *argv[]){
 	BOOL fSuccess = FALSE;
 	DWORD cbRead, cbToWrite, cbWritten, dwMode;
 	LPTSTR lpszPipename = TEXT("\\\\.\\pipe\\pipeexemplo");
-
-#ifdef UNICODE
-	_setmode(_fileno(stdin), _O_WTEXT);
-	_setmode(_fileno(stdout), _O_WTEXT);
-#endif
+//
+//#ifdef UNICODE
+//	_setmode(_fileno(stdin), _O_WTEXT);
+//	_setmode(_fileno(stdout), _O_WTEXT);
+//#endif
 
 	if (argc > 1){
 		lpvMessage = argv[1];
