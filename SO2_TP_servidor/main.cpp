@@ -8,6 +8,7 @@
 
 #define BUFFERSIZE 512
 
+
 DWORD WINAPI ThreadCliente(LPVOID lpvPARAM);
 
 int _tmain(VOID) {
@@ -107,17 +108,17 @@ DWORD WINAPI ThreadCliente(LPVOID lpvPARAM) {
 	//dialogo com cliente
 	while (1) {
 
-		//obtem mensagem
-		fSuccess = ReadFile(hPipe, pchRequest, BUFFERSIZE*sizeof(TCHAR), &cbBytesRead, NULL);
+		////obtem mensagem
+		//fSuccess = ReadFile(hPipe, pchRequest, BUFFERSIZE*sizeof(TCHAR), &cbBytesRead, NULL);
 	
-		//leitura corre mal
-		if (!fSuccess || cbBytesRead == 0) {
-			if (GetLastError() == ERROR_BROKEN_PIPE)
-				_tprintf(TEXT("Cliente desligou-se. Erro=%d\n"), GetLastError());
-			else
-				_tprintf(TEXT("ReadFile falhou. Erro = %d\n"), GetLastError());
-			break;
-		}
+		////leitura corre mal
+		//if (!fSuccess || cbBytesRead == 0) {
+		//	if (GetLastError() == ERROR_BROKEN_PIPE)
+		//		_tprintf(TEXT("Cliente desligou-se. Erro=%d\n"), GetLastError());
+		//	else
+		//		_tprintf(TEXT("ReadFile falhou. Erro = %d\n"), GetLastError());
+		//	break;
+		//}
 	
 		//Escreve a resposta no pipe
 		_tprintf(TEXT("[ESCRITOR] Frase: "));
