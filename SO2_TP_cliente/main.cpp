@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include <tchar.h>
 #include <strsafe.h>
+#include <conio.h>
+#include <fcntl.h>
+#include <io.h>
 
 #define BUFSIZE 512
 
@@ -13,6 +16,11 @@ int _tmain(int argc, TCHAR *argv[]){
 	DWORD cbRead, cbToWrite, cbWritten, dwMode;
 	LPTSTR lpszPipename = TEXT("\\\\.\\pipe\\pipeexemplo");
 
+#ifdef UNICODE
+	_setmode(_fileno(stdin), _O_WTEXT);
+	_setmode(_fileno(stdout), _O_WTEXT);
+#endif
+
 	if (argc > 1){
 		lpvMessage = argv[1];
 	}else {
@@ -20,7 +28,7 @@ int _tmain(int argc, TCHAR *argv[]){
 	}
 
 	while (true){
-		hPipe = CreateFile(lpszPipename, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+		hPipe = CreateFile(lpszPipename, GENERIC_READ | GENERIC_WRITE | PIPE_WAIT, 0, NULL, OPEN_EXISTING, 0, NULL);
 	
 		if (hPipe != INVALID_HANDLE_VALUE){
 			break;
@@ -57,15 +65,17 @@ int _tmain(int argc, TCHAR *argv[]){
 	}
 	_tprintf(TEXT("\nMensagem enviada. Aguardar resposta\n"));
 
-	do{
+	while (1) {
 		fSuccess = ReadFile(hPipe, chBuf, BUFSIZE * sizeof(TCHAR), &cbRead, NULL);
-		
-		if(!fSuccess && GetLastError() != ERROR_MORE_DATA) {
+		chBuf[cbRead / sizeof(TCHAR)] = '\0';
+		if (!fSuccess || !cbRead)
+			break;
+		_tprintf(TEXT("[LEITOR] Recebi %d bytes: '%s'... (ReadFile)\n"), cbRead, chBuf);
+		Sleep(10000);
+		if (!fSuccess && GetLastError() != ERROR_MORE_DATA) {
 			break;
 		}
-
-		_tprintf(TEXT("Recebido:\"%s\"\n"), chBuf);
-	} while (!fSuccess);
+	}
 
 	if (!fSuccess){
 		_tprintf(TEXT("ReadFile deu erro. Erro=%d\n"), GetLastError());
