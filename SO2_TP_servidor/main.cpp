@@ -17,10 +17,10 @@ int _tmain(VOID) {
 	HANDLE hThread = NULL;
 	LPTSTR lpszPipename = TEXT("\\\\.\\pipe\\pipeexemplo");
 
-#ifdef UNICODE
-	_setmode(_fileno(stdin), _O_WTEXT);
-	_setmode(_fileno(stdout), _O_WTEXT);
-#endif
+//#ifdef UNICODE
+//	_setmode(_fileno(stdin), _O_WTEXT);
+//	_setmode(_fileno(stdout), _O_WTEXT);
+//#endif
 
 	while (1) {
 		_tprintf(TEXT("\nServidor Ligado pipe=%s\n"), lpszPipename);
