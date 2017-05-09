@@ -71,7 +71,7 @@ int _tmain(int argc, TCHAR *argv[]){
 		if (!fSuccess || !cbRead)
 			break;
 		_tprintf(TEXT("[LEITOR] Recebi %d bytes: '%s'... (ReadFile)\n"), cbRead, chBuf);
-		Sleep(10000);
+		
 		if (!fSuccess && GetLastError() != ERROR_MORE_DATA) {
 			break;
 		}
