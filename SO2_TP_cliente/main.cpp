@@ -1,88 +1,46 @@
-#include <Windows.h>
-#include <stdio.h>
+#include <windows.h>
 #include <tchar.h>
-#include <strsafe.h>
-#include <conio.h>
-#include <fcntl.h>
-#include <io.h>
+#include <stdio.h>
 
-#define BUFSIZE 512
+#define BufferSize 100
+#define Buffers 10
 
-int _tmain(int argc, TCHAR *argv[]){
-	HANDLE hPipe;
-	LPTSTR lpvMessage;
-	TCHAR chBuf[BUFSIZE];
-	BOOL fSuccess = FALSE;
-	DWORD cbRead, cbToWrite, cbWritten, dwMode;
-	LPTSTR lpszPipename = TEXT("\\\\.\\pipe\\pipeexemplo");
-//
-//#ifdef UNICODE
-//	_setmode(_fileno(stdin), _O_WTEXT);
-//	_setmode(_fileno(stdout), _O_WTEXT);
-//#endif
+TCHAR NomeMemoria[] = TEXT("Nome da Memória Partilhada");
+TCHAR(*PtrMemoria)[Buffers][BufferSize];
+TCHAR *NomeSemaforoPodeEscrever = { TEXT("Semáforo Pode Escrever") };
+TCHAR *NomeSemaforoPodeLer = { TEXT("Semáforo Pode Ler") };
+HANDLE PodeEscrever;
+HANDLE PodeLer;
+HANDLE hMemoria;
 
-	if (argc > 1){
-		lpvMessage = argv[1];
-	}else {
-		lpvMessage = TEXT("Mensagem de recurso");
-	}
+int _tmain(int argc, TCHAR *argv[])
+{
+	PodeEscrever = CreateSemaphore(NULL, Buffers, Buffers, NomeSemaforoPodeEscrever);
+	PodeLer = CreateSemaphore(NULL, 0, Buffers, NomeSemaforoPodeLer);
+	hMemoria = CreateFileMapping((HANDLE)0xFFFFFFFF, NULL, PAGE_READWRITE, 0, sizeof(TCHAR[Buffers][BufferSize]), NomeMemoria);
 
-	while (true){
-		hPipe = CreateFile(lpszPipename, GENERIC_READ | GENERIC_WRITE | PIPE_WAIT, 0, NULL, OPEN_EXISTING, 0, NULL);
-	
-		if (hPipe != INVALID_HANDLE_VALUE){
-			break;
-		}
-		
-		if (GetLastError() != ERROR_PIPE_BUSY){
-			_tprintf(TEXT("Não foi possivel abrir o pipe. Erro=%d\n"), GetLastError());
-			return -1;
-		}
-
-		if (!WaitNamedPipe(lpszPipename, 30000)){
-			_tprintf(TEXT("Esperei por instancia 30 segundos. Sair"));
-			return -1;
-		}
-	}
-
-	dwMode = PIPE_READMODE_MESSAGE;
-
-	fSuccess = SetNamedPipeHandleState(hPipe, &dwMode, NULL, NULL);
-
-	if (!fSuccess){
-		_tprintf(TEXT("SetNamedPipeHandleState falhou. Erro=%d\n"), GetLastError());
+	if (PodeEscrever == NULL || PodeLer == NULL || hMemoria == NULL) {
+		_tprintf(TEXT("[Erro]Criação de objectos do Windows(%d)\n"), GetLastError());
 		return -1;
 	}
 
-	cbToWrite = (lstrlen(lpvMessage) + 1) * sizeof(TCHAR);
-	_tprintf(TEXT("A enviar %d bytes: \"%s\"\n"), cbToWrite, lpvMessage);
-
-	fSuccess = WriteFile(hPipe, lpvMessage, cbToWrite, &cbWritten, NULL);
-
-	if (!fSuccess){
-		_tprintf(TEXT("WriteFile falhou. Erro=%d\n"), GetLastError());
-		return -1;
-	}
-	_tprintf(TEXT("\nMensagem enviada. Aguardar resposta\n"));
-
-	while (1) {
-		fSuccess = ReadFile(hPipe, chBuf, BUFSIZE * sizeof(TCHAR), &cbRead, NULL);
-		chBuf[cbRead / sizeof(TCHAR)] = '\0';
-		if (!fSuccess || !cbRead)
-			break;
-		_tprintf(TEXT("[LEITOR] Recebi %d bytes: '%s'... (ReadFile)\n"), cbRead, chBuf);
-		
-		if (!fSuccess && GetLastError() != ERROR_MORE_DATA) {
-			break;
-		}
-	}
-
-	if (!fSuccess){
-		_tprintf(TEXT("ReadFile deu erro. Erro=%d\n"), GetLastError());
+	PtrMemoria = (TCHAR(*)[Buffers][BufferSize])MapViewOfFile(hMemoria
+		, FILE_MAP_WRITE, 0, 0, sizeof(TCHAR[Buffers][BufferSize]));
+	if (PtrMemoria == NULL) {
+		_tprintf(TEXT("[Erro]Mapeamento da memória partilhada(%d)\n"), GetLastError());
 		return -1;
 	}
 
-	CloseHandle(hPipe);
+	for (int i = 0;; ++i)
+	{
+		WaitForSingleObject(PodeLer, INFINITE);
+		_tprintf((*PtrMemoria)[i % 10]); // Reader reads data
+		ReleaseSemaphore(PodeEscrever, 1, NULL);
+	}
 
+	UnmapViewOfFile(PtrMemoria);
+	CloseHandle(PodeEscrever);
+	CloseHandle(PodeLer);
+	CloseHandle(hMemoria);
 	return 0;
 }
